@@ -14,9 +14,11 @@ def calculate_check_digit(gtin):
     return str((10 - (total % 10)) % 10)
 
 def generate_serial_number():
-    """Генерирует серийный номер (6 символов: буквы, цифры и разрешенные спецсимволы)."""
+    """Генерирует серийный номер (7 символов: первый символ - цифра, остальные буквы, цифры и разрешенные спецсимволы)."""
     charset = string.ascii_letters + string.digits + "!\"%&'*+-./_,:;=<>?"
-    return ''.join(random.choices(charset, k=6))
+    first_digit = random.choice(string.digits)
+    remaining_chars = ''.join(random.choices(charset, k=6))
+    return first_digit + remaining_chars
 
 def generate_verification_code():
     """Генерирует код проверки (4 символа: буквы, цифры и разрешенные спецсимволы)."""
@@ -40,10 +42,6 @@ def escape_hex_symbols(mark):
     """Экранирует символы разделителей в шестнадцатеричном формате."""
     return mark.replace("<GS>", "\\x1D").replace("<FNC1>", "\\F")
 
-def url_encode_hex_symbols(mark):
-    """URL-кодирует маркировку с разделителями в шестнадцатеричном формате."""
-    return urllib.parse.quote(mark)
-
 # Генерация 10 уникальных маркировок
 marks = [generate_mark() for _ in range(10)]
 escaped_marks = [escape_hex_symbols(mark) for mark in marks]
@@ -51,20 +49,20 @@ escaped_marks = [escape_hex_symbols(mark) for mark in marks]
 # Создание списка маркировок без разделителей и крипто-хвоста
 marks_without_extras = [mark.replace("<FNC1>", "").replace("<GS>", "").split("93")[0] for mark in marks]
 
-# URL-кодировка маркировок с разделителями в шестнадцатеричном формате
-escaped_url_encoded_marks = [url_encode_hex_symbols(escape_hex_symbols(mark)) for mark in marks]
+# URL-кодировка маркировок с разделителями
+marks_url_encoded = [urllib.parse.quote(mark) for mark in escaped_marks]
 
 # Сохранение маркировок в файл
-with open("milk.txt", "w", encoding="utf-8") as file:
-    file.write("Маркировки с разделителями в шестнадцатеричном формате:\n")
+with open("beer.txt", "w", encoding="utf-8") as file:
+    file.write("Маркировки с разделителями (GS1 стандарт):\n")
     for mark in escaped_marks:
         file.write(mark + "\n")
     file.write("\nМаркировки без разделителей и крипто-хвоста:\n")
     for mark in marks_without_extras:
         file.write(mark + "\n")
-    file.write("\nМаркировки в URL-кодировке (разделители в шестнадцатеричном формате):\n")
-    for mark in escaped_url_encoded_marks:
+    file.write("\nМаркировки в URL-кодировке:\n")
+    for mark in marks_url_encoded:
         file.write(mark + "\n")
 
 # Вывод результатов
-print("Маркировки сохранены в файл 'milk.txt'")
+print("Маркировки сохранены в файл 'beer.txt'")
