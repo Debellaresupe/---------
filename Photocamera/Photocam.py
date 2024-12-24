@@ -27,10 +27,6 @@ def generate_verification_code():
     charset = string.ascii_uppercase + string.digits + ":=+/"
     return ''.join(random.choices(charset, k=44))
 
-def escape_hex_symbols(mark):
-    """Экранирует символы разделителей в шестнадцатеричном формате."""
-    return mark.replace("<GS>", "\\x1D").replace("\\F", "\\x1D")
-
 def generate_mark(with_separators=True, include_verification=True):
     """Генерирует маркировку в формате GS1 с разделителями и опционально крипто-хвостом."""
     fnc1 = "\\F"  # GS1 символ FNC1
@@ -60,10 +56,25 @@ def create_url_encoded_marks(marks_with_separators):
     """Создает марки в URL-кодировке."""
     return [urllib.parse.quote(mark) for mark in marks_with_separators]
 
+def create_segmented_marks(marks_with_separators):
+    """Создает марки, разбитые на сегменты с названиями."""
+    segmented_marks = []
+    for mark in marks_with_separators:
+        parts = mark.split("\\x1D")
+        segmented_mark = {
+            "**_GTIN_**": parts[0].replace("\\F01", ""),
+            "**_SerialNumber_**": parts[1].replace("21", ""),
+            "**_IDKey_**": parts[2].replace("91", ""),
+            "**_VerificationCode_**": parts[3].replace("92", "") if len(parts) > 3 else ""
+        }
+        segmented_marks.append(segmented_mark)
+    return segmented_marks
+
 # Генерация 10 уникальных маркировок
 marks_with_separators = [generate_mark(with_separators=True, include_verification=True) for _ in range(10)]
 marks_without_extras = create_marks_without_extras(marks_with_separators)
 marks_url_encoded = create_url_encoded_marks(marks_with_separators)
+segmented_marks = create_segmented_marks(marks_with_separators)
 
 # Сохранение маркировок в файл
 with open("photocam.txt", "w", encoding="utf-8") as file:
@@ -76,6 +87,9 @@ with open("photocam.txt", "w", encoding="utf-8") as file:
     file.write("\nМаркировки в URL-кодировке:\n")
     for mark in marks_url_encoded:
         file.write(mark + "\n")
+    file.write("\nМаркировки разбитые на сегменты:\n")
+    for mark in segmented_marks:
+        file.write(str(mark) + "\n")
 
 # Вывод результатов
 print("Маркировки сохранены в файл 'photocam.txt'")

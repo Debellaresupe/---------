@@ -57,6 +57,20 @@ def strip_extra_code_and_url_encode(mark):
     mark = mark.rsplit("3101", 1)[0] + "3101"
     return urllib.parse.quote(escape_hex_symbols(mark))
 
+def split_into_segments(mark):
+    """Разбивает маркировку на сегменты с названиями в одной строке."""
+    gtin = mark.split("01")[1].split("21")[0]
+    serial_number = mark.split("21")[1].split("<GS>")[0]
+    verification_code = mark.split("<GS>93")[1].split("<GS>3101")[0]
+    
+    segments = {
+        "GTIN": gtin,
+        "Serial Number": serial_number,
+        "Verification Code": verification_code
+    }
+    formatted_segments = "; ".join([f"{key}: {value}" for key, value in segments.items()])
+    return formatted_segments
+
 # Генерация 10 базовых маркировок
 base_marks = [generate_mark() for _ in range(10)]
 
@@ -65,6 +79,7 @@ marks_with_hex = [escape_hex_symbols(mark) for mark in base_marks]
 marks_without_delimiters = [strip_delimiters_and_extra_code(mark) for mark in base_marks]
 marks_url_encoded_full = [urllib.parse.quote(escape_hex_symbols(mark)) for mark in base_marks]
 marks_url_encoded_4th = [strip_extra_code_and_url_encode(mark) for mark in base_marks]
+marks_segments = [split_into_segments(mark) for mark in base_marks]
 
 # Сохранение всех наборов в файл
 with open("milkWithWight.txt", "w", encoding="utf-8") as file:
@@ -86,9 +101,15 @@ with open("milkWithWight.txt", "w", encoding="utf-8") as file:
         file.write(mark + "\n")
     file.write("\n")
 
-    # Набор 4: Маркировка в URL-кодировке (без последних 6 цифр, но с 3101)
+    # Набор 4: Маркировка в URL-кодировке (без последних 6 цифр, с 3101)
     file.write("Маркировки в URL-кодировке (без последних 6 цифр, с 3101):\n")
     for mark in marks_url_encoded_4th:
+        file.write(mark + "\n")
+    file.write("\n")
+
+    # Набор 5: Маркировки разбитые на сегменты
+    file.write("Маркировки разбитые на сегменты:\n")
+    for mark in marks_segments:
         file.write(mark + "\n")
 
 # Вывод результатов

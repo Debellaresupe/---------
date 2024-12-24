@@ -18,15 +18,10 @@ def generate_serial_number():
     charset = string.ascii_uppercase + string.digits + "!\"%&'()*+,-./:;<=>?_"
     return ''.join(random.choices(charset, k=13))
 
-def generate_id_key():
-    """Генерирует ИД ключа проверки (4 символа: буквы и цифры)."""
-    charset = string.ascii_uppercase + string.digits
-    return ''.join(random.choices(charset, k=4))
-
 def generate_verification_code():
-    """Генерирует код проверки (88 символов: буквы, цифры и спецсимволы для криптохвоста по GS1)."""
+    """Генерирует код проверки (4 символа: буквы, цифры и символы :=+/)."""
     charset = string.ascii_uppercase + string.digits + ":=+/"
-    return ''.join(random.choices(charset, k=88))
+    return ''.join(random.choices(charset, k=4))
 
 def escape_hex_symbols(mark):
     """Экранирует символы разделителей в шестнадцатеричном формате."""
@@ -39,12 +34,11 @@ def generate_mark(with_separators=True, include_verification=True):
 
     gtin = generate_gtin()
     serial_number = generate_serial_number()
-    id_key = generate_id_key()
     verification_code = generate_verification_code() if include_verification else ""
 
     mark = (
-        f"{fnc1}01{gtin}{gs}21{serial_number}{gs}91{id_key}{gs}92{verification_code}"
-        if with_separators else f"01{gtin}21{serial_number}91{id_key}"
+        f"{fnc1}01{gtin}{gs}21{serial_number}{gs}93{verification_code}"
+        if with_separators else f"01{gtin}21{serial_number}93{verification_code}"
     )
     return mark
 
@@ -67,10 +61,9 @@ def create_segmented_marks(marks_with_separators):
     for mark in marks_with_separators:
         parts = mark.split("\\x1D")
         segmented_mark = {
-            "GTIN": parts[0].replace("\\F01", ""),
-            "SerialNumber": parts[1].replace("21", ""),
-            "IDKey": parts[2].replace("91", ""),
-            "VerificationCode": parts[3].replace("92", "") if len(parts) > 3 else ""
+            "**_GTIN_**": parts[0].replace("\\F01", ""),
+            "**_SerialNumber_**": parts[1].replace("21", ""),
+            "**_VerificationCode_**": parts[2].replace("93", "") if len(parts) > 2 else ""
         }
         segmented_marks.append(segmented_mark)
     return segmented_marks
@@ -79,10 +72,10 @@ def create_segmented_marks(marks_with_separators):
 marks_with_separators = [generate_mark(with_separators=True, include_verification=True) for _ in range(10)]
 marks_without_extras = create_marks_without_extras(marks_with_separators)
 marks_url_encoded = create_url_encoded_marks(marks_with_separators)
-segmented_marks = create_segmented_marks(marks_with_separators)
+marks_segmented = create_segmented_marks(marks_with_separators)
 
 # Сохранение маркировок в файл
-with open("shoes.txt", "w", encoding="utf-8") as file:
+with open("water.txt", "w", encoding="utf-8") as file:
     file.write("Маркировки с разделителями (GS1 стандарт):\n")
     for mark in marks_with_separators:
         file.write(mark + "\n")
@@ -92,9 +85,9 @@ with open("shoes.txt", "w", encoding="utf-8") as file:
     file.write("\nМаркировки в URL-кодировке:\n")
     for mark in marks_url_encoded:
         file.write(mark + "\n")
-    file.write("\nРазбитые на сегменты марки:\n")
-    for segmented_mark in segmented_marks:
-        file.write(str(segmented_mark) + "\n")
+    file.write("\nМаркировки разбитые на сегменты:\n")
+    for mark in marks_segmented:
+        file.write(str(mark) + "\n")
 
 # Вывод результатов
-print("Маркировки сохранены в файл 'shoes.txt'")
+print("Маркировки сохранены в файл 'water.txt'")

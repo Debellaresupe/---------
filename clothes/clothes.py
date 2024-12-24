@@ -60,13 +60,28 @@ def create_url_encoded_marks(marks_with_separators):
     """Создает марки в URL-кодировке."""
     return [urllib.parse.quote(mark) for mark in marks_with_separators]
 
+def create_segmented_marks(marks_with_separators):
+    """Создает марки, разбитые на сегменты с названиями."""
+    segmented_marks = []
+    for mark in marks_with_separators:
+        parts = mark.split("\\x1D")
+        segmented_mark = {
+            "**_GTIN_**": parts[0].replace("\\F01", ""),
+            "**_SerialNumber_**": parts[1].replace("21", ""),
+            "**_IDKey_**": parts[2].replace("91", ""),
+            "**_VerificationCode_**": parts[3].replace("92", "") if len(parts) > 3 else ""
+        }
+        segmented_marks.append(segmented_mark)
+    return segmented_marks
+
 # Генерация 10 уникальных маркировок
 marks_with_separators = [generate_mark(with_separators=True, include_verification=True) for _ in range(10)]
 marks_without_extras = create_marks_without_extras(marks_with_separators)
 marks_url_encoded = create_url_encoded_marks(marks_with_separators)
+marks_segmented = create_segmented_marks(marks_with_separators)
 
 # Сохранение маркировок в файл
-with open("одежда.txt", "w", encoding="utf-8") as file:
+with open("clothes.txt", "w", encoding="utf-8") as file:
     file.write("Маркировки с разделителями (GS1 стандарт):\n")
     for mark in marks_with_separators:
         file.write(mark + "\n")
@@ -76,6 +91,9 @@ with open("одежда.txt", "w", encoding="utf-8") as file:
     file.write("\nМаркировки в URL-кодировке:\n")
     for mark in marks_url_encoded:
         file.write(mark + "\n")
+    file.write("\nМаркировки разбитые на сегменты:\n")
+    for mark in marks_segmented:
+        file.write(str(mark) + "\n")
 
 # Вывод результатов
-print("Маркировки сохранены в файл 'marks_gs1.txt'")
+print("Маркировки сохранены в файл 'clothes.txt'")
